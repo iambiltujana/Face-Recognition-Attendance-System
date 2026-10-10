@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital Attendance – Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+:root{
+  --bg:#f5f8fe; --card:#fff; --line:#e8edf5; --ink:#0f1b3d; --muted:#64708a;
+  --blue:#2f5be7; --green:#2f9e72; --red:#e5384f; --purple:#7c5cd6; --amber:#e8a13a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+
+/* Sidebar */
+.sidebar{position:fixed;inset:0 auto 0 0;width:255px;background:#f1f5fc;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:16px 10px;z-index:10}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 12px 22px;color:var(--ink);text-decoration:none;font-weight:600;font-size:17px}
+.brand i{font-size:30px;color:var(--blue)}
+.side-nav a{display:flex;align-items:center;gap:14px;padding:11px 14px;margin-bottom:6px;border-radius:10px;
+  color:var(--muted);text-decoration:none;font-weight:500}
+.side-nav a i{font-size:19px}
+.side-nav a:hover{background:#e6edfb;color:var(--ink)}
+.side-nav a.active{background:#dfe8fb;color:var(--blue)}
+.side-foot{margin:auto 14px 8px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.7}
+
+/* Main */
+.main{margin-left:255px}
+.topbar{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:flex-end;
+  align-items:center;gap:22px;padding:0 28px;font-size:12.5px;font-weight:500}
+.top-date,.top-user{display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:600}
+.content{padding:22px 28px 40px}
+.page-title{font-size:26px;font-weight:700;margin:0}
+.page-sub{color:var(--muted);margin:2px 0 22px}
+.content-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.col-main,.col-side{display:flex;flex-direction:column;gap:20px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border:1px solid var(--line);border-radius:12px}
+.stat{display:flex;gap:14px;padding:18px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat-icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:21px;flex:none}
+.stat-icon.blue{background:#e5ecfd;color:var(--blue)} .stat-icon.green{background:#dff3ea;color:var(--green)}
+.stat-icon.red{background:#fde7ea;color:var(--red)} .stat-icon.purple{background:#ece6fa;color:var(--purple)}
+.stat-label{font-size:12px;font-weight:600}
+.stat-value{font-size:28px;font-weight:700;line-height:1.25}
+.stat-delta{font-size:11.5px;color:var(--muted)}
+.stat-delta b{font-weight:600}
+.stat-delta .up{color:var(--green)} .stat-delta .down{color:var(--red)}
+
+/* Panels */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.panel-head h2{font-size:16px;font-weight:600;margin:0;display:flex;align-items:center;gap:12px}
+.panel-head h2 i{color:var(--blue);font-size:20px}
+.range-select{width:auto;font-size:13px;color:var(--muted)}
+.chart-box{position:relative;height:250px}
+.view-all{font-size:12px;font-weight:500;color:var(--blue);text-decoration:none}
+
+/* Recent table */
+.recent-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.recent-table th{background:#f5f8fe;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px}
+.recent-table td{padding:9px 10px;border-bottom:1px solid var(--line)}
+.recent-table tr:last-child td{border-bottom:0}
+.recent-table .empty{text-align:center;color:var(--muted);padding:22px}
+.who{display:flex;align-items:center;gap:12px;font-weight:600}
+.ini{width:26px;height:26px;border-radius:50%;background:#e1e6ef;color:var(--muted);font-size:9.5px;font-weight:600;display:grid;place-items:center}
+.badge-s{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500}
+.badge-s::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge-s.present{background:#dff3ea;color:var(--green)} .badge-s.late{background:#fcefd6;color:#c9801a}
+
+/* Quick actions */
+.qa{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:8px;margin-bottom:10px;text-decoration:none;font-weight:500}
+.qa:last-child{margin-bottom:0}
+.qa i:first-child{font-size:18px}
+.qa-blue{background:var(--blue);color:#fff} .qa-green{background:var(--green);color:#fff}
+.qa-light{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.qa:hover{filter:brightness(.95)}
+
+/* Training */
+.train-box{display:flex;gap:16px;align-items:center;background:#f3f6fc;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.train-box>i{font-size:28px;color:var(--muted)}
+.train-title{font-weight:600} .train-sub{font-size:12px;color:var(--muted)}
+.train-progress{height:14px;margin-bottom:14px;background:#e6ecf7;border-radius:8px}
+.train-progress .progress-bar{background:var(--blue);font-size:10px}
+.btn-train{width:100%;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:500;padding:11px;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-train:hover{filter:brightness(.95)} .btn-train:disabled{opacity:.6}
+
+/* Responsive */
+@media (max-width:1200px){.content-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(2){border-right:0}}
+@media (max-width:900px){
+  .sidebar{position:static;width:100%;flex-direction:column;border-right:0;border-bottom:1px solid var(--line)}
+  .side-nav{display:flex;flex-wrap:wrap;gap:4px}.side-foot{display:none}.main{margin-left:0}
+}
+@media (max-width:560px){.stats{grid-template-columns:1fr}.stat{border-right:0;border-bottom:1px solid var(--line)}.content{padding:16px}}
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="brand" href="/"><i class="bi bi-person-bounding-box"></i><span>Digital Attendance</span></a>
+  <nav class="side-nav">
+    <a class="active" href="/"><i class="bi bi-house-door"></i>Dashboard</a>
+    <a href="/students"><i class="bi bi-people"></i>Students</a>
+    <a href="/mark_attendance"><i class="bi bi-camera"></i>Mark Attendance</a>
+    <a href="/attendance_record"><i class="bi bi-journal-text"></i>Attendance Records</a>
+    <a href="#trainCard"><i class="bi bi-cpu"></i>Train Model</a>
+    <a href="#"><i class="bi bi-gear"></i>Settings</a>
+  </nav>
+  <div class="side-foot">Digital Face Recognition<br>Attendance System</div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="top-date"><i class="bi bi-calendar3"></i><span id="todayLabel"></span></div>
+    <div class="top-user"><span class="avatar">A</span>Admin<i class="bi bi-chevron-down"></i></div>
+  </header>
+
+  <div class="content">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Monitor student attendance and manage recognition.</p>
+
+    <div class="content-grid">
+      <div class="col-main">
+        <!-- Stat cards -->
+        <section class="stats">
+          <div class="stat"><div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+            <div><div class="stat-label">Total Students</div><div class="stat-value" id="sTotal">–</div><div class="stat-delta" id="dTotal"></div></div></div>
+          <div class="stat"><div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+            <div><div class="stat-label">Present Today</div><div class="stat-value" id="sPresent">–</div><div class="stat-delta" id="dPresent"></div></div></div>
+          <div class="stat"><div class="stat-icon red"><i class="bi bi-x-lg"></i></div>
+            <div><div class="stat-label">Absent Today</div><div class="stat-value" id="sAbsent">–</div><div class="stat-delta" id="dAbsent"></div></div></div>
+          <div class="stat"><div class="stat-icon purple"><i class="bi bi-pie-chart-fill"></i></div>
+            <div><div class="stat-label">Attendance Rate</div><div class="stat-value" id="sRate">–</div><div class="stat-delta" id="dRate"></div></div></div>
+        </section>
+
+        <!-- Chart -->
+        <section class="panel">
+          <div class="panel-head">
+            <h2><i class="bi bi-graph-up"></i>Attendance Overview</h2>
+            <select id="rangeSelect" class="form-select form-select-sm range-select">
+              <option value="7" selected>Last 7 Days</option>
+              <option value="14">Last 14 Days</option>
+              <option value="30">Last 30 Days</option>
+            </select>
+          </div>
+          <div class="chart-box"><canvas id="attendanceChart"></canvas></div>
+        </section>
+
+        <!-- Recent attendance -->
+        <section class="panel">
+          <div class="panel-head">
+            <h2><i class="bi bi-clock"></i>Recent Attendance</h2>
+            <a class="view-all" href="/attendance_record">View All <i class="bi bi-arrow-right"></i></a>
+          </div>
+          <div class="table-responsive">
+            <table class="recent-table">
+              <thead><tr><th>Student</th><th>Date</th><th>Check-in</th><th>Status</th></tr></thead>
+              <tbody id="recentBody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-side">
+        <section class="panel">
+          <div class="panel-head"><h2><i class="bi bi-lightning-charge"></i>Quick Actions</h2></div>
+          <a class="qa qa-blue" href="/add_student"><i class="bi bi-camera"></i>Add Student<i class="bi bi-chevron-right ms-auto"></i></a>
+          <a class="qa qa-green" href="/mark_attendance"><i class="bi bi-camera"></i>Mark Attendance<i class="bi bi-chevron-right ms-auto"></i></a>
+          <a class="qa qa-light" href="/attendance_record"><i class="bi bi-file-earmark-text"></i>View Records<i class="bi bi-chevron-right ms-auto"></i></a>
+        </section>
+
+        <section class="panel" id="trainCard">
+          <div class="panel-head"><h2><i class="bi bi-gear"></i>Model Training</h2></div>
+          <div class="train-box">
+            <i class="bi bi-clock-history"></i>
+            <div><div class="train-title" id="trainTitle">Model not trained yet</div>
+            <div class="train-sub" id="trainMsg">Train the model to enable face recognition.</div></div>
+          </div>
+          <div class="progress train-progress d-none" id="trainProgressWrap">
+            <div id="trainProgress" class="progress-bar" style="width:0%">0%</div>
+          </div>
+          <button id="trainBtn" class="btn-train"><i class="bi bi-play"></i>Start Training</button>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
